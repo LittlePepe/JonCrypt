@@ -40,12 +40,24 @@ decript_dek = cipher_kek.decrypt(
     None
 )
 print(f'Chave DEK Descript: {decript_dek.hex()} \n')
+
+cipher_dek = AESGCM(decript_dek)
 nonce_dek = secrets.token_bytes(12)
 
-ciphertext = decript_dek.encrypt(
+ciphertext = cipher_dek.encrypt(
     nonce_dek,
     dados,
     None
 )
 
-print(ciphertext)
+print(f'Dados criptografados: {ciphertext.hex()} \n')
+
+decript_text = cipher_dek.decrypt(
+    nonce_dek,
+    ciphertext,
+    None
+)
+
+print(f'Dados descriptografados: {decript_text.hex()} \n')
+print(f'Dados: {decript_text.decode('utf-8')}')
+
