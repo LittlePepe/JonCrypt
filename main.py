@@ -6,6 +6,7 @@ from storage.vault_repository import VaultRepository
 
 
 repository = VaultRepository("data/joncrypt.db")
+
 # Senha mestre
 senha_mestre = b"MinhaSenhaMestre123!"
 

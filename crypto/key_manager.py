@@ -8,7 +8,6 @@ class KeyManager:
 
         self.key_derivation = key_derivation
         self.key_derivation_data = self.key_derivation.derive_kek()
-
         self.kek = self.key_derivation_data.kek
 
 
