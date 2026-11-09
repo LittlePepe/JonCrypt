@@ -12,8 +12,9 @@ CREATE TABLE IF NOT EXISTS vault_metadata (
 
 CREATE TABLE IF NOT EXISTS vault_entries (
     id INTEGER PRIMARY KEY,
+    link TEXT NOT NULL,
     encrypted_data BLOB NOT NULL,
     nonce BLOB NOT NULL,
     created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NULL
 );

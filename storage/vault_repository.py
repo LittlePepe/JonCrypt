@@ -1,4 +1,5 @@
-from .DataManager import DatabaseManager
+import datetime
+from .data_maneger import DatabaseManager
 
 class VaultRepository:
     
@@ -42,6 +43,20 @@ class VaultRepository:
 
         self.data_manager.insert_data(query, params)
 
+    def save_credential(self, encrypted_password: bytes, nonce: bytes, link: str) -> None:
+        query = """
+            INSERT INTO vault_entries (
+                encrypted_data,
+                nonce,
+                link,
+                created_at
+            )
+            VALUES (?, ?, ?, ?)
+        """
+
+        params = (encrypted_password, nonce, link, datetime.datetime.now().timestamp())
+        self.data_manager.insert_data(query, params)
+
     def get_metadados(self):
         query = """
             SELECT
@@ -59,6 +74,20 @@ class VaultRepository:
         """
 
         params = (1,)
+        return self.data_manager.fetch_data(query, params)
+
+    def get_credential(self, credential_id: int):
+        query = """
+            SELECT
+                id,
+                encrypted_data,
+                link,
+                nonce
+            FROM vault_entries
+            WHERE id = ?
+        """
+
+        params = (credential_id,)
         return self.data_manager.fetch_data(query, params)
 
     def vault_exists(self) -> bool:

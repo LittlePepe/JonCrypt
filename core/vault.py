@@ -3,7 +3,7 @@ from crypto.key_manager import KeyManager
 from storage.vault_repository import VaultRepository
 from model.models import KeyManagerData
 
-class InicializationKey:
+class InicializationVault:
     def __init__(self, senha_mestre: bytes, repository: VaultRepository):
         self.senha_mestre = senha_mestre
         self.repository = repository
@@ -53,5 +53,5 @@ class InicializationKey:
         key_manager_data = KeyManagerData(nonce_kek=nonce_kek, encrypted_dek=encrypted_dek)
 
         recovered_dek = key_manager.decrypt_dek(key_manager_data)
-        
+
         return recovered_dek

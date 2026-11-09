@@ -1,7 +1,8 @@
-from storage.DataManager import DatabaseManager
+from storage.data_maneger import DatabaseManager
 from storage.vault_repository import VaultRepository
-from core.vault import InicializationKey
-from crypto.cryptation import Cryptation
+from core.vault import InicializationVault
+from core.validation_maneger import ValidationManager
+from core.credential_manager import credentialManager
 
 # Inicializar banco de dados
 db_manager = DatabaseManager("data/joncrypt.db")
@@ -15,36 +16,23 @@ try:
     senha_mestre = b"MinhaSenhaMestre123!"
 
     # Inicializar gerenciamento do cofre
-    vault = InicializationKey(senha_mestre, repository)
+    vault = InicializationVault(senha_mestre, repository)
 
-    # Verificar existência do cofre
-    if repository.vault_exists():
-
-        print("Cofre existente. Realizando desbloqueio...")
-        recovered_dek = vault.unlock_vault()
-
-    else:
-
-        print("Nenhum cofre encontrado. Criando novo cofre...")
-        recovered_dek = vault.create_vault()
+    # Inicializar inicializar/validação do cofre
+    validation_vault = ValidationManager(vault)
+    recovered_dek = validation_vault.validate_vault()
 
     # Testar criptografia de uma credencial
-    senha_site = b"MinhaSenhaDoSite123!"
+    senha_site = b"SenhaSite123!"
+    reference = "https://www.exemplo.com"
 
-    encrypted_password = Cryptation.encrypt(
-        recovered_dek,
-        senha_site
-    )
+    # Inicializar gerenciador de credenciais
+    credential_manager = credentialManager(recovered_dek, reference, senha_site, repository)
+    credential_manager.encrypt_credential()
 
-    # Descriptografar credencial
-    decrypted_password = Cryptation.decrypt(
-        recovered_dek,
-        encrypted_password.nonce,
-        encrypted_password.ciphertext
-    )
-
-    print("DEK recuperada:", recovered_dek.hex())
-    print("Senha recuperada:", decrypted_password.decode())
+    # Testar descriptografia de uma credencial
+    decrypted_password = credential_manager.decrypt_credential(id=1)
+    print(f"Senha descriptografada: {decrypted_password}")
 
 finally:
     # Fechar conexão com banco
