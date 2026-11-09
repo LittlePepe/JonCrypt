@@ -23,8 +23,4 @@ class KeyManager:
         )
 
     def decrypt_dek(self, data: KeyManagerData) -> bytes:
-        return Cryptation.decrypt(
-            self.kek,
-            data.nonce_kek,
-            data.encrypted_dek
-        )
+        return Cryptation.decrypt(self.kek,data.nonce_kek,data.encrypted_dek)

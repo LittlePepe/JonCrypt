@@ -2,9 +2,8 @@ from .DataManager import DatabaseManager
 
 class VaultRepository:
     
-    def __init__(self, db_path: str):
-        self.data_manager = DatabaseManager(db_path)
-        self.data_manager.initialize_database()
+    def __init__(self, db_manager: DatabaseManager):
+        self.data_manager = db_manager
 
     def save_metadata(
         self,
@@ -42,3 +41,36 @@ class VaultRepository:
         )
 
         self.data_manager.insert_data(query, params)
+
+    def get_metadados(self):
+        query = """
+            SELECT
+                id,
+                salt_kek,
+                encrypted_dek,
+                nonce_kek,
+                kdf_algorithm,
+                time_cost,
+                memory_cost,
+                parallelism,
+                hash_len
+            FROM vault_metadata
+            WHERE id = ?
+        """
+
+        params = (1,)
+        return self.data_manager.fetch_data(query, params)
+
+    def vault_exists(self) -> bool:
+
+        query = """
+            SELECT 1
+            FROM vault_metadata
+            WHERE id = ?
+        """
+
+        params = (1,)
+        
+        result = self.data_manager.fetch_data(query, params)
+        return bool(result)
+

@@ -6,6 +6,7 @@ class DatabaseManager:
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
 
+
     def initialize_database(self):
 
         schema_path = Path(__file__).with_name("schema.sql")
@@ -24,10 +25,6 @@ class DatabaseManager:
                 "ADD COLUMN hash_len INTEGER NOT NULL DEFAULT 32"
             )
 
-        self.conn.commit()
-
-    def create_table(self, query: str):
-        self.cursor.execute(query)
         self.conn.commit()
 
     def insert_data(self, query: str, params: tuple):

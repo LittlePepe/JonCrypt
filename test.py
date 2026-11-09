@@ -4,11 +4,11 @@ from crypto.key_manager import KeyManager
 from crypto.cryptation import Cryptation
 from storage.vault_repository import VaultRepository
 
-
-repository = VaultRepository("data/joncrypt.db")
-
 # Senha mestre | Input
 senha_mestre = b"MinhaSenhaMestre123!"
+
+# Local banco de dados
+repository = VaultRepository("data/joncrypt.db")
 
 # Inicializar derivação | KDF
 kdf = KeyDerivation(senha_mestre)

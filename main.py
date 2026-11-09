@@ -1,59 +1,51 @@
-
-from crypto.kdf import KeyDerivation
-from crypto.key_manager import KeyManager
-from crypto.cryptation import Cryptation
+from storage.DataManager import DatabaseManager
 from storage.vault_repository import VaultRepository
+from core.vault import InicializationKey
+from crypto.cryptation import Cryptation
 
+# Inicializar banco de dados
+db_manager = DatabaseManager("data/joncrypt.db")
+db_manager.initialize_database()
 
-repository = VaultRepository("data/joncrypt.db")
+try:
+    # Inicializar Repository
+    repository = VaultRepository(db_manager)
 
-# Senha mestre
-senha_mestre = b"MinhaSenhaMestre123!"
+    # Senha mestre (temporária para testes)
+    senha_mestre = b"MinhaSenhaMestre123!"
 
-# Inicializar derivação
-kdf = KeyDerivation(senha_mestre)
+    # Inicializar gerenciamento do cofre
+    vault = InicializationKey(senha_mestre, repository)
 
-# Inicializar gerenciamento de chaves
-key_manager = KeyManager(kdf)
+    # Verificar existência do cofre
+    if repository.vault_exists():
 
-# Gerar DEK
-dek = key_manager.create_dek()
+        print("Cofre existente. Realizando desbloqueio...")
+        recovered_dek = vault.unlock_vault()
 
-# Encapsular DEK utilizando KEK
-encrypted_dek = key_manager.encrypt_dek(dek)
+    else:
 
+        print("Nenhum cofre encontrado. Criando novo cofre...")
+        recovered_dek = vault.create_vault()
 
-repository.save_metadata(
-    salt_kek=kdf.salt_kek,
-    encrypted_dek=encrypted_dek.encrypted_dek,
-    nonce_kek=encrypted_dek.nonce_kek,
-    kdf_algorithm="Argon2id",
-    kdf_parameters={
-        "time_cost": 3,
-        "memory_cost": 65536,
-        "parallelism": 4,
-        "hash_len": 32
-    }
-)
+    # Testar criptografia de uma credencial
+    senha_site = b"MinhaSenhaDoSite123!"
 
-# Recuperar DEK
-recovered_dek = key_manager.decrypt_dek(encrypted_dek)
+    encrypted_password = Cryptation.encrypt(
+        recovered_dek,
+        senha_site
+    )
 
-# Testar criptografia de uma credencial
-senha_site = b"MinhaSenhaDoSite123!"
+    # Descriptografar credencial
+    decrypted_password = Cryptation.decrypt(
+        recovered_dek,
+        encrypted_password.nonce,
+        encrypted_password.ciphertext
+    )
 
-encrypted_password = Cryptation.encrypt(
-    recovered_dek,
-    senha_site
-)
+    print("DEK recuperada:", recovered_dek.hex())
+    print("Senha recuperada:", decrypted_password.decode())
 
-# Descriptografar credencial
-decrypted_password = Cryptation.decrypt(
-    recovered_dek,
-    encrypted_password.nonce,
-    encrypted_password.ciphertext
-)
-
-print("DEK original:", dek.hex())
-print("DEK recuperada:", recovered_dek.hex())
-print("Senha recuperada:", decrypted_password.decode())
+finally:
+    # Fechar conexão com banco
+    db_manager.close()

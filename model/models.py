@@ -17,3 +17,4 @@ class KeyManagerData:
 class EncryptedData:
     nonce: bytes
     ciphertext: bytes
+
