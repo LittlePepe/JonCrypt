@@ -18,6 +18,7 @@ kek = argon2.low_level.hash_secret_raw(
     type=argon2.low_level.Type.ID
 )
 
+
 nonce_kek = secrets.token_bytes(12)
 cipher_kek = AESGCM(kek)
 print(f'Chave KEK: {cipher_kek} \n')

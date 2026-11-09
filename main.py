@@ -1,15 +1,58 @@
-import os
-import hashlib
 
-senha = "SenhaFoda123".encode('utf-8')
+from crypto.kdf import KeyDerivation
+from crypto.key_manager import KeyManager
+from crypto.cryptation import Cryptation
+from storage.vault_repository import VaultRepository
 
-salt_hex = os.urandom(32).hex()
-salt_bytes = bytes.fromhex(salt_hex)
 
-hash_complet = hashlib.pbkdf2_hmac('sha256', senha, salt_bytes, 600000)
-hash_final = hash_complet.hex()
+repository = VaultRepository("data/joncrypt.db")
+# Senha mestre
+senha_mestre = b"MinhaSenhaMestre123!"
 
-print(senha)
-print(salt_hex)
-print(salt_bytes)
-print(hash_final)
+# Inicializar derivação
+kdf = KeyDerivation(senha_mestre)
+
+# Inicializar gerenciamento de chaves
+key_manager = KeyManager(kdf)
+
+# Gerar DEK
+dek = key_manager.create_dek()
+
+# Encapsular DEK utilizando KEK
+encrypted_dek = key_manager.encrypt_dek(dek)
+
+
+repository.save_metadata(
+    salt_kek=kdf.salt_kek,
+    encrypted_dek=encrypted_dek.encrypted_dek,
+    nonce_kek=encrypted_dek.nonce_kek,
+    kdf_algorithm="Argon2id",
+    kdf_parameters={
+        "time_cost": 3,
+        "memory_cost": 65536,
+        "parallelism": 4,
+        "hash_len": 32
+    }
+)
+
+# Recuperar DEK
+recovered_dek = key_manager.decrypt_dek(encrypted_dek)
+
+# Testar criptografia de uma credencial
+senha_site = b"MinhaSenhaDoSite123!"
+
+encrypted_password = Cryptation.encrypt(
+    recovered_dek,
+    senha_site
+)
+
+# Descriptografar credencial
+decrypted_password = Cryptation.decrypt(
+    recovered_dek,
+    encrypted_password.nonce,
+    encrypted_password.ciphertext
+)
+
+print("DEK original:", dek.hex())
+print("DEK recuperada:", recovered_dek.hex())
+print("Senha recuperada:", decrypted_password.decode())
