@@ -96,15 +96,13 @@ secreto, mas é necessário para realizar a descriptografia.
 
 ## Tecnologias utilizadas
 
-  Tecnologia     Finalidade
-  -------------- ---------------------------------------------
-  Python         Linguagem principal
-  SQLite         Armazenamento local
-  Argon2id       Derivação de chaves
-  AES-256-GCM    Criptografia autenticada
-  Cryptography   Implementação dos algoritmos criptográficos
-  Dataclasses    Organização de estruturas de dados
-  POO            Organização da arquitetura
+- Python      |  Linguagem principal
+- SQLite      |  Armazenamento local
+- Argon2id    |  Derivação de chaves
+- AES-256-GCM |  Criptografia autenticada
+- Cryptography|  Implementação dos algoritmos criptográficos
+- Dataclasses |  Organização de estruturas de dados
+- POO         |  Organização da arquitetura
 
 
 ------------------------------------------------------------------------
