@@ -18,3 +18,13 @@ class EncryptedData:
     nonce: bytes
     ciphertext: bytes
 
+@dataclass
+class KdfParams:
+    time_cost: int
+    memory_cost: int
+    parallelism: int
+    hash_len: int
+    frozen: bool
+
+
+

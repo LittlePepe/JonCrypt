@@ -5,18 +5,18 @@ from model.models import EncryptedData
 class Cryptation:
 
     @staticmethod
-    def encrypt(key: bytes, data: bytes) -> EncryptedData:
+    def encrypt(key: bytes, data: bytes, aad: bytes | None = None) -> EncryptedData:
 
         nonce = secrets.token_bytes(12)
 
         cipher = AESGCM(key)
-        ciphertext = cipher.encrypt(nonce, data, None)
+        ciphertext = cipher.encrypt(nonce, data, aad)
         
         return EncryptedData(nonce=nonce, ciphertext=ciphertext)
 
     @staticmethod
-    def decrypt(key: bytes, nonce: bytes, ciphertext: bytes) -> bytes:
+    def decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes | None = None) -> bytes:
 
         cipher = AESGCM(key)
 
-        return cipher.decrypt(nonce, ciphertext, None)
+        return cipher.decrypt(nonce, ciphertext, aad)

@@ -20,6 +20,7 @@ try:
 
     # Inicializar inicializar/validação do cofre
     validation_vault = ValidationManager(vault)
+
     recovered_dek = validation_vault.validate_vault()
 
     # Testar criptografia de uma credencial

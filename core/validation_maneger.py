@@ -1,3 +1,4 @@
+from storage.vault_repository import VaultRepository
 
 class ValidationManager:
     def __init__(self, vault):
@@ -11,6 +12,8 @@ class ValidationManager:
         else:
             print("Nenhum cofre encontrado. Criando novo cofre...")
             recovered_dek = self.vault.create_vault()
+             
+
 
         return recovered_dek 
         
