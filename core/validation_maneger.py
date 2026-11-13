@@ -1,4 +1,3 @@
-from storage.vault_repository import VaultRepository
 
 class ValidationManager:
     def __init__(self, vault):

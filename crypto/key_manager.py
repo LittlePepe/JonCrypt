@@ -4,7 +4,7 @@ from crypto.cryptation import Cryptation
 from model.models import KeyManagerData
 
 class KeyManager:
-    def __init__(self, key_derivation: KeyDerivation, default_kdf_params=None):
+    def __init__(self, key_derivation: KeyDerivation):
 
         self.key_derivation = key_derivation
         self.key_derivation_data = self.key_derivation.derive_kek()

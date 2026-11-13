@@ -1,28 +1,21 @@
 from crypto.kdf import KeyDerivation
 from crypto.key_manager import KeyManager
-from storage.vault_repository import VaultRepository
-from model.models import KdfParams, KeyManagerData
+import dataclasses
+from storage.svault_repository import SvaultRepository
+from storage.svault_format import FORMAT_MAJOR, FORMAT_MINOR, KDF_ARGON2ID, CIPHER_AES256GCM, NONCE_LEN, WRAPPED_DEK_LEN, kdf_section
+from model.models import KdfParams, KeyManagerData, VaultHeader, VaultPayload
 
 class InicializationVault:
 
-    DEFAULT_KDF_PARAMS = KdfParams(
-        time_cost=2,
-        memory_cost=102400,
-        parallelism=8,
-        hash_len=32,
-        frozen=True
-    )
-        
-    def __init__(self, senha_mestre: bytes, repository: VaultRepository):
+    def __init__(self, senha_mestre: bytes, repository: SvaultRepository):
         self.senha_mestre = senha_mestre
-        self.default_kdf_params = self.DEFAULT_KDF_PARAMS
         self.repository = repository
 
 
     def create_vault(self):
 
         # Inicializar derivação | KDF
-        kdf = KeyDerivation(self.senha_mestre, default_kdf_params=self.default_kdf_params)
+        kdf = KeyDerivation(self.senha_mestre)
 
         # Inicializar gerenciamento de chaves | DEK
         key_manager = KeyManager(kdf) 
@@ -30,24 +23,36 @@ class InicializationVault:
         # Gerar DEK | DEK
         dek = key_manager.create_dek()
 
-        # Encapsular DEK utilizando KEK | DEK -> AES-GCM
-        encrypted_dek = key_manager.encrypt_dek(dek)
-
-        # Salvar metadados DB | DEK
-        self.repository.save_metadata(
-            salt_kek=kdf.salt_kek,
-            encrypted_dek=encrypted_dek.encrypted_dek,
-            nonce_kek=encrypted_dek.nonce_kek,
-            kdf_algorithm="Argon2id",
-            kdf_parameters={
-                "time_cost": self.default_kdf_params.time_cost,
-                "memory_cost": self.default_kdf_params.memory_cost,
-                "parallelism": self.default_kdf_params.parallelism,
-                "hash_len": self.default_kdf_params.hash_len
-            }
+        # Header provisório (dek_nonce, wrapped_dek e payload ainda não existem)
+        header = VaultHeader(
+            format_major=FORMAT_MAJOR,
+            format_minor=FORMAT_MINOR,
+            flags=0,
+            kdf_id=KDF_ARGON2ID,
+            kdf_params=KdfParams,
+            salt=kdf.salt_kek,
+            cipher_id=CIPHER_AES256GCM,
+            dek_nonce=bytes(NONCE_LEN),
+            wrapped_dek=bytes(WRAPPED_DEK_LEN),
+            payload_nonce=bytes(NONCE_LEN),
+            payload_len=0,
         )
 
-        return dek
+        # Encapsular DEK utilizando KEK + Header (AAD) | DEK -> AES-GCM
+        encrypted_dek = key_manager.encrypt_dek(dek, aad=kdf_section(header))
+
+        # Header Definitivo com DEK
+        header = dataclasses.replace(
+            header,
+            dek_nonce=encrypted_dek.nonce_kek,
+            wrapped_dek=encrypted_dek.encrypted_dek,
+        )
+
+        # Payload
+        payload = VaultPayload(schema_version=1, next_id=1, entries=[])
+        self.repository.create(header, payload, dek)
+
+        return dek, header
 
     def unlock_vault(self):
         metadados = self.repository.get_metadados()
