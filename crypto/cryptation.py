@@ -5,9 +5,10 @@ from model.models import EncryptedData
 class Cryptation:
 
     @staticmethod
-    def encrypt(key: bytes, data: bytes, aad: bytes | None = None) -> EncryptedData:
+    def encrypt(key: bytes, data: bytes, aad: bytes | None = None, nonce: bytes | None = None) -> EncryptedData:
 
-        nonce = secrets.token_bytes(12)
+        if nonce is None:
+            nonce = secrets.token_bytes(12)
 
         cipher = AESGCM(key)
         ciphertext = cipher.encrypt(nonce, data, aad)

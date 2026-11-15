@@ -1,6 +1,7 @@
 import dataclasses
 import os
 import secrets
+import time
 import shutil
 from pathlib import Path
 from cryptography.exceptions import InvalidTag
@@ -9,7 +10,7 @@ from crypto.cryptation import Cryptation
 
 from crypto.cryptation import Cryptation
 from storage.svault_payload import payload_to_bytes, bytes_to_payload
-from model.models import VaultHeader, VaultPayload
+from model.models import VaultHeader, VaultPayload, CredentialEntry
 from storage.svault_format import (
     NONCE_LEN,
     header_size,
@@ -36,7 +37,7 @@ class SvaultRepository:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         return self.save(header, payload, dek)
 
-    def save(self, header: VaultHeader, payload: VaultPayload, dek: bytes) -> VaultHeader:
+    def save(self, header: VaultHeader, payload: VaultPayload, dek: bytes ) -> VaultHeader:
         plaintext = payload_to_bytes(payload)
         new_header = dataclasses.replace(
             header,
@@ -78,6 +79,27 @@ class SvaultRepository:
             raise ValueError("dados do cofre corrompidos ou adulterados") from exc
  
         return header, bytes_to_payload(plaintext)
+    
+    def save_credential(
+        self,
+        header: VaultHeader,
+        payload: VaultPayload,
+        dek: bytes,
+        link: str,
+        encrypted_password: bytes,
+    ):
+        credential = CredentialEntry(
+            id=payload.next_id,
+            link=link,
+            password=encrypted_password,
+            created_at=int(time.time()),
+            updated_at=None
+        )
+
+        payload.entries.append(credential)
+        payload.next_id += 1
+
+        return self.save(header, payload, dek)
  
     def _atomic_write(self, data: bytes) -> None:
         with open(self.tmp_path, "wb") as file:

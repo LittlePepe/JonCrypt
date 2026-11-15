@@ -7,8 +7,7 @@ DEFAULT_KDF_PARAMS = KdfParams(
     memory_cost=102400,
     parallelism=8,
     hash_len=32
-)
-
+    )
 
 class KeyDerivation:
 

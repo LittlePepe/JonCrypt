@@ -2,8 +2,9 @@ from crypto.kdf import KeyDerivation
 from crypto.key_manager import KeyManager
 import dataclasses
 from storage.svault_repository import SvaultRepository
-from storage.svault_format import FORMAT_MAJOR, FORMAT_MINOR, KDF_ARGON2ID, CIPHER_AES256GCM, NONCE_LEN, WRAPPED_DEK_LEN, kdf_section
+from storage.svault_format import REQUIRED_HASH_LEN, FORMAT_MAJOR, FORMAT_MINOR, KDF_ARGON2ID, CIPHER_AES256GCM, NONCE_LEN, WRAPPED_DEK_LEN, kdf_section
 from model.models import KdfParams, KeyManagerData, VaultHeader, VaultPayload
+
 
 class InicializationVault:
 
@@ -29,7 +30,7 @@ class InicializationVault:
             format_minor=FORMAT_MINOR,
             flags=0,
             kdf_id=KDF_ARGON2ID,
-            kdf_params=KdfParams,
+            kdf_params=kdf.default_kdf_params,
             salt=kdf.salt_kek,
             cipher_id=CIPHER_AES256GCM,
             dek_nonce=bytes(NONCE_LEN),
@@ -52,28 +53,23 @@ class InicializationVault:
         payload = VaultPayload(schema_version=1, next_id=1, entries=[])
         self.repository.create(header, payload, dek)
 
-        return dek, header
+        return dek, header, payload
 
     def unlock_vault(self):
-        metadados = self.repository.get_metadados()
-        salt_kek = metadados[0][1]
-        nonce_kek = metadados[0][3]
-        encrypted_dek = metadados [0][2]
-
-        kdf_params = KdfParams(
-            time_cost=metadados[0][5],
-            memory_cost=metadados[0][6],
-            parallelism=metadados[0][7],
-            hash_len=metadados[0][8]
-        )
+        metadados = self.repository.read_header()
+        
+        salt_kek = metadados.salt
+        nonce_dek = metadados.dek_nonce
+        encrypted_dek = metadados.wrapped_dek
 
         # Inicializar derivação | KDF
-        kdf = KeyDerivation(self.senha_mestre,default_kdf_params=kdf_params, salt_kek=salt_kek)
+        kdf = KeyDerivation(self.senha_mestre, salt_kek=salt_kek)
         # Inicializar gerenciamento de chaves | DEK
         key_manager = KeyManager(kdf)
         
-        key_manager_data = KeyManagerData(nonce_kek=nonce_kek, encrypted_dek=encrypted_dek)
+        key_manager_data = KeyManagerData(nonce_kek=nonce_dek, encrypted_dek=encrypted_dek)
 
-        recovered_dek = key_manager.decrypt_dek(key_manager_data)
+        recovered_dek = key_manager.decrypt_dek(data=key_manager_data, aad=kdf_section(metadados))
 
-        return recovered_dek
+        header, payload = self.repository.load(recovered_dek)
+        return recovered_dek, header, payload

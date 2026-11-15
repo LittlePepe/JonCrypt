@@ -1,12 +1,10 @@
-from dataclasses import asdict
+from dataclasses import asdict, fields
 import json
 from model.models import CredentialEntry, VaultPayload
 
 SCHEMA_VERSION = 1
 
-def payload_to_bytes(payload: VaultPayload, credential: CredentialEntry):
-    payload.entries.append(credential)
-    payload.next_id += 1
+def payload_to_bytes(payload: VaultPayload):
 
     dict_payload = asdict(payload)
 

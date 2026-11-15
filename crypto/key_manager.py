@@ -15,7 +15,7 @@ class KeyManager:
         return secrets.token_bytes(32)
     
     def encrypt_dek(self, dek: bytes, aad: bytes | None = None) -> KeyManagerData:
-        encrypted_data = Cryptation.encrypt(self.kek,dek, aad)
+        encrypted_data = Cryptation.encrypt(self.kek,dek, aad=aad)
         
         return KeyManagerData(
             nonce_kek=encrypted_data.nonce, 
@@ -23,4 +23,4 @@ class KeyManager:
         )
 
     def decrypt_dek(self, data: KeyManagerData, aad: bytes | None = None) -> bytes:
-        return Cryptation.decrypt(self.kek,data.nonce_kek,data.encrypted_dek, aad)
+        return Cryptation.decrypt(self.kek, data.nonce_kek, data.encrypted_dek, aad=aad)

@@ -13,17 +13,18 @@ senha_mestre = b"MinhaSenhaMestre123!"
 vault = InicializationVault(senha_mestre, repository)
 validation_vault = ValidationManager(vault)
 
+
 try:
     dek, header, payload = validation_vault.validate_vault()
+
 except VaultError as erro:
     print(f"Não foi possível abrir o cofre: {erro}")
     raise SystemExit(1)
 
-credential_manager = credentialManager(dek, header, payload, repository)
+credential_manager = credentialManager(dek=dek, header=header, payload=payload, repository=repository)
 
 # Testar gravação de uma credencial
 credential_manager.add_credential("https://www.exemplo.com", "SenhaSite123!")
 
 # Testar leitura de uma credencial
-credencial = credential_manager.get_credential(1)
-print(f"Senha recuperada: {credencial.password}")
+print(credential_manager.payload.entries)
