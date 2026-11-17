@@ -1,22 +1,21 @@
 from crypto.kdf import KeyDerivation
-from crypto.key_manager import KeyManager
+from crypto.dek import KeyManager
 import dataclasses
 from storage.svault_repository import SvaultRepository
-from storage.svault_format import REQUIRED_HASH_LEN, FORMAT_MAJOR, FORMAT_MINOR, KDF_ARGON2ID, CIPHER_AES256GCM, NONCE_LEN, WRAPPED_DEK_LEN, kdf_section
-from model.models import KdfParams, KeyManagerData, VaultHeader, VaultPayload
+from storage.svault_format import FORMAT_MAJOR, FORMAT_MINOR, KDF_ARGON2ID, CIPHER_AES256GCM, NONCE_LEN, WRAPPED_DEK_LEN, kdf_section
+from model.models import KeyManagerData, VaultHeader, VaultPayload
 
 
-class InicializationVault:
+class VaultManager:
 
-    def __init__(self, senha_mestre: bytes, repository: SvaultRepository):
-        self.senha_mestre = senha_mestre
+    def __init__(self, repository: SvaultRepository):
         self.repository = repository
 
 
-    def create_vault(self):
+    def create_vault(self, master_key: bytes):
 
         # Inicializar derivação | KDF
-        kdf = KeyDerivation(self.senha_mestre)
+        kdf = KeyDerivation(master_key)
 
         # Inicializar gerenciamento de chaves | DEK
         key_manager = KeyManager(kdf) 
@@ -55,7 +54,7 @@ class InicializationVault:
 
         return dek, header, payload
 
-    def unlock_vault(self):
+    def unlock_vault(self, master_key: bytes):
         metadados = self.repository.read_header()
         
         salt_kek = metadados.salt
@@ -63,7 +62,7 @@ class InicializationVault:
         encrypted_dek = metadados.wrapped_dek
 
         # Inicializar derivação | KDF
-        kdf = KeyDerivation(self.senha_mestre, salt_kek=salt_kek)
+        kdf = KeyDerivation(master_key, salt_kek=salt_kek)
         # Inicializar gerenciamento de chaves | DEK
         key_manager = KeyManager(kdf)
         
